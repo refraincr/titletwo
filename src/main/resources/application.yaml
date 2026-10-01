@@ -5,6 +5,11 @@ spring:
     url: jdbc:mysql://localhost:3306/sg
     username: root
     password: root
+
 jwt:
   secret: 876b9fb9bf5ba5b14a01217b76f5f375d9854e98476e208f5e8839ae7070961b
   expireSeconds: 86400
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
