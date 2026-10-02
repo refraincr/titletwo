@@ -1,16 +1,13 @@
-package com.uunnm.titletwo.business.record.entity;
+package com.uunnm.titletwo.business.record.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * 纠纷事件记录
- */
-@TableName("tb_input_record")
 @Data
-public class InputRecord {
+public class RecordQueryVO {
 
     /**
      * 技术主键
@@ -94,16 +91,6 @@ public class InputRecord {
     private String remark;
 
     /**
-     * 导入文件保存路径
-     */
-    private String storagePath;
-
-    /**
-     * 错误文件保存路径
-     */
-    private String errorPath;
-
-    /**
      * 创建时间
      * 数据库配置了 DEFAULT CURRENT_TIMESTAMP 这里不做自动填充
      */
@@ -116,26 +103,14 @@ public class InputRecord {
     private LocalDateTime gmtModified;
 
     /**
-     * 创建人用户 ID
+     * 创建人用户名
      */
     private String createdBy;
 
     /**
-     * 最后修改人用户 ID
+     * 最后修改人用户名
      */
     private String modifiedBy;
-
-    /**
-     * 逻辑删除：0否，1是
-     */
-    @TableLogic
-    private Integer isDeleted;
-
-    /**
-     * 乐观锁版本号
-     */
-    @Version
-    private Integer version;
 
     /**
      * 复核状态：0待复核，1已复核
