@@ -1,6 +1,7 @@
 package com.uunnm.titletwo.business.record.controller;
 
 
+import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.service.RecordService;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
@@ -21,13 +22,18 @@ public class RecordController {
         recordService.add(recordAddBO);
     }
 
-    @PostMapping("del")
+    @DeleteMapping("del")
     public void del(@RequestParam Long id){
         recordService.del(id);
     }
 
     @GetMapping("page")
-    public PageVO<RecordQueryVO> page(@RequestBody RecordQueryBO recordQueryBO) {
+    public PageVO<RecordQueryVO> page(RecordQueryBO recordQueryBO) {
         return recordService.page(recordQueryBO);
+    }
+
+    @PutMapping("edit")
+    public void edit(RecordEditBO editBO) {
+        recordService.edit(editBO);
     }
 }

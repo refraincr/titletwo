@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.uunnm.titletwo.business.auth.service.UserService;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
+import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
@@ -18,7 +19,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -63,9 +63,10 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 )
                 .le(recordQueryBO.getGmtCreateEnd() != null,
                         InputRecord::getGmtCreate, recordQueryBO.getGmtCreateEnd()
+                ).
+                eq(StringUtils.hasText(recordQueryBO.getDisputeType()),
+                        InputRecord::getDisputeType, recordQueryBO.getDisputeType()
                 )
-                .eq(StringUtils.hasText(recordQueryBO.getDepartment()),
-                        InputRecord::get)
                 .page(pageRequest);
 
         List<RecordQueryVO> voList = new ArrayList<>();
@@ -83,6 +84,13 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         pageVO.setDataList(voList);
 
         return pageVO;
+    }
+
+    @Override
+    public void edit(RecordEditBO editBO) {
+        InputRecord inputRecord = new InputRecord();
+        BeanUtils.copyProperties(editBO,inputRecord);
+        updateById(inputRecord);
     }
 
 }

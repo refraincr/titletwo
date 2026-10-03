@@ -2,6 +2,7 @@ package com.uunnm.titletwo.business.record.service;
 
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
+import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
@@ -14,4 +15,6 @@ public interface RecordService extends IService<InputRecord> {
     void del(Long id);
 
     PageVO<RecordQueryVO> page(RecordQueryBO recordQueryBO);
+
+    void edit(RecordEditBO editBO);
 }
