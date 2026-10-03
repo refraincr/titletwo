@@ -1,7 +1,6 @@
 package com.uunnm.titletwo.business.record.bo;
 
 import com.uunnm.titletwo.common.entity.PageBO;
-import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
