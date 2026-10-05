@@ -15,7 +15,7 @@ public class RecordAddBO {
     /**
      * 当事人姓名
      */
-        private String partyName;
+    private String partyName;
 
 
     /**
