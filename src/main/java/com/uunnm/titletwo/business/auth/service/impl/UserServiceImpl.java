@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.uunnm.titletwo.business.auth.bo.UserLoginBO;
 import com.uunnm.titletwo.business.auth.bo.UserRegisterBO;
+import com.uunnm.titletwo.business.auth.constant.UnitsData;
 import com.uunnm.titletwo.business.auth.entity.User;
 import com.uunnm.titletwo.business.auth.mapper.UserMapper;
 import com.uunnm.titletwo.business.auth.service.JwtService;
 import com.uunnm.titletwo.business.auth.service.UserService;
+import com.uunnm.titletwo.business.auth.vo.UnitsVO;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
@@ -19,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -37,6 +41,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User u =  new User();
         BeanUtils.copyProperties(userRegisterBO,u);
         u.setPassword(passwordEncoder.encode(userRegisterBO.getPassword()));
+        for (UnitsVO v: UnitsData.UNITS) {
+            if (v.getUnits().contains(userRegisterBO.getUnit())) {
+                u.setRole(v.getRole());
+            }
+        }
         save(u);
     }
 

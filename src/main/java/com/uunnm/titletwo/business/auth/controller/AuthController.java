@@ -4,6 +4,7 @@ import com.uunnm.titletwo.business.auth.bo.UserRegisterBO;
 import com.uunnm.titletwo.business.auth.bo.UserLoginBO;
 import com.uunnm.titletwo.business.auth.service.UnitService;
 import com.uunnm.titletwo.business.auth.service.UserService;
+import com.uunnm.titletwo.business.auth.vo.UnitsVO;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class AuthController {
     }
 
     @GetMapping("/auth/units")
-    public List<String> getUnits(@RequestParam String name) {
-        return unitService.query(name);
+    public List<UnitsVO> getUnits() {
+        return unitService.query();
     }
 }
