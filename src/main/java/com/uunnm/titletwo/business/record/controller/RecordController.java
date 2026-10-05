@@ -33,7 +33,7 @@ public class RecordController {
     }
 
     @PutMapping("edit")
-    public void edit(RecordEditBO editBO) {
+    public void edit(@RequestBody RecordEditBO editBO) {
         recordService.edit(editBO);
     }
 }
