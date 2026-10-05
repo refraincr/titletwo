@@ -45,6 +45,13 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
 
     @Override
     public PageVO<RecordQueryVO> page(RecordQueryBO recordQueryBO) {
+        boolean isCenter = false;
+        // 获取当前上下文的用户
+        UserInfoVO userInfo = userService.getUserInfo();
+        if (userInfo.getUnit().equals("县综治中心")) {
+            isCenter = true;
+        }
+
         Page<InputRecord> pageRequest =
                 new Page<>(recordQueryBO.getCurrentPage(), recordQueryBO.getPageSize());
 
@@ -63,10 +70,11 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 )
                 .le(recordQueryBO.getGmtCreateEnd() != null,
                         InputRecord::getGmtCreate, recordQueryBO.getGmtCreateEnd()
-                ).
-                eq(StringUtils.hasText(recordQueryBO.getDisputeType()),
+                )
+                .eq(StringUtils.hasText(recordQueryBO.getDisputeType()),
                         InputRecord::getDisputeType, recordQueryBO.getDisputeType()
                 )
+                .eq(!isCenter, InputRecord::getCreatedBy, userInfo.getId())
                 .page(pageRequest);
 
         List<RecordQueryVO> voList = new ArrayList<>();
