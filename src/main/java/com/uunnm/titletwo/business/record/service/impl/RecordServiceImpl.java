@@ -1,5 +1,7 @@
 package com.uunnm.titletwo.business.record.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.uunnm.titletwo.business.auth.service.UserService;
@@ -10,29 +12,49 @@ import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
 import com.uunnm.titletwo.business.record.service.RecordService;
+import com.uunnm.titletwo.business.record.service.RepeatRecordService;
+import com.uunnm.titletwo.business.record.util.RecordUtil;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> implements RecordService {
     private final UserService userService;
+    private final RepeatRecordService repeatRecordService;
 
     @Override
     public void add(RecordAddBO recordAddBO) {
         InputRecord inputRecord = new InputRecord();
         BeanUtils.copyProperties(recordAddBO,inputRecord);
         UserInfoVO userInfo = userService.getUserInfo();
+
+        RecordUtil recordUtil = new RecordUtil();
+        String keywords = recordUtil.extraKeywords(inputRecord.getProblemDescription());
+
+        inputRecord.setKeywordTags(keywords);
+
         // 创建人,最后修改人的id
         inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
         inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
+
+        LambdaQueryWrapper<InputRecord> lambdaQueryWrapper = Wrappers.lambdaQuery();
+        lambdaQueryWrapper
+                .eq(InputRecord::getPartyName, recordAddBO.getPartyName())
+                .eq(InputRecord::getEventCategory, recordAddBO.getEventCategory())
+                .eq(InputRecord::getDisputeType, recordAddBO.getDisputeType());
+
+
+
         save(inputRecord);
     }
 
@@ -99,6 +121,12 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         InputRecord inputRecord = new InputRecord();
         BeanUtils.copyProperties(editBO,inputRecord);
         updateById(inputRecord);
+    }
+
+    @Override
+    public PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO) {
+        
+        return null;
     }
 
 }

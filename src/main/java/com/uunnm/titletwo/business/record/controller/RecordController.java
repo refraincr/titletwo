@@ -36,4 +36,9 @@ public class RecordController {
     public void edit(@RequestBody RecordEditBO editBO) {
         recordService.edit(editBO);
     }
+
+    @GetMapping("/repeat/page")
+    public PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO) {
+        return recordService.repeatPage(recordQueryBO);
+    }
 }

@@ -17,4 +17,6 @@ public interface RecordService extends IService<InputRecord> {
     PageVO<RecordQueryVO> page(RecordQueryBO recordQueryBO);
 
     void edit(RecordEditBO editBO);
+
+    PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO);
 }
