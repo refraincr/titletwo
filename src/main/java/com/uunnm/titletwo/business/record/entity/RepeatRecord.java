@@ -13,5 +13,5 @@ public class RepeatRecord {
 
     private String department;
 
-    private Long record_id;
+    private Long recordId;
 }

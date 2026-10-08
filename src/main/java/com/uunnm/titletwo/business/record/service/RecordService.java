@@ -8,6 +8,8 @@ import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 
+import java.util.List;
+
 
 public interface RecordService extends IService<InputRecord> {
     void add(RecordAddBO RecordAddBO);
@@ -18,5 +20,5 @@ public interface RecordService extends IService<InputRecord> {
 
     void edit(RecordEditBO editBO);
 
-    PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO);
+    List<RecordQueryVO> repeatPage();
 }

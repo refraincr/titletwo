@@ -9,7 +9,9 @@ import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
 import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
+import com.uunnm.titletwo.business.record.bo.RepeatRecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
+import com.uunnm.titletwo.business.record.entity.RepeatRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
 import com.uunnm.titletwo.business.record.service.RecordService;
 import com.uunnm.titletwo.business.record.service.RepeatRecordService;
@@ -20,10 +22,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -47,17 +50,47 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
         inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
 
+        // 查询是否有重复的数据
+        // 时间区间
+        long millis = recordAddBO.getOccurredAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        LocalDateTime start = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(millis + 1000 * 60),
+                ZoneId.systemDefault()
+        );
+        LocalDateTime end = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(millis - 1000 * 60),
+                ZoneId.systemDefault()
+        );
+
         LambdaQueryWrapper<InputRecord> lambdaQueryWrapper = Wrappers.lambdaQuery();
         lambdaQueryWrapper
                 .eq(InputRecord::getPartyName, recordAddBO.getPartyName())
                 .eq(InputRecord::getEventCategory, recordAddBO.getEventCategory())
-                .eq(InputRecord::getDisputeType, recordAddBO.getDisputeType());
+                .eq(InputRecord::getDisputeType, recordAddBO.getDisputeType())
+                .eq(InputRecord::getKeywordTags, keywords)
+                .between(InputRecord::getCreatedBy, start, end);
+
+        List<InputRecord> list = list(lambdaQueryWrapper);
+        List<RepeatRecord> repeatRecords = new ArrayList<>();
+        list.forEach(record -> {
+            RepeatRecord repeatRecord = new RepeatRecord();
+            BeanUtils.copyProperties(record,repeatRecord);
+            repeatRecord.setDepartment(userInfo.getUnit());
+            repeatRecords.add(repeatRecord);
+        });
 
 
+        if (!list.isEmpty()) {
+            repeatRecordService.addBatch(repeatRecords);
+
+            RepeatRecord repeatRecord = new RepeatRecord();
+            BeanUtils.copyProperties(inputRecord,repeatRecord);
+            repeatRecord.setDepartment(userInfo.getUnit());
+            repeatRecordService.add(repeatRecord);
+        }
 
         save(inputRecord);
     }
-
 
 
     @Override
@@ -124,9 +157,16 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     }
 
     @Override
-    public PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO) {
-        
-        return null;
+    public List<RecordQueryVO> repeatPage() {
+        List<Long> ids = repeatRecordService.page();
+        List<RecordQueryVO> list = new ArrayList<>();
+        ids.forEach(id -> {
+            InputRecord inputRecord = getById(id);
+            RecordQueryVO recordQueryVO = new RecordQueryVO();
+            BeanUtils.copyProperties(inputRecord,recordQueryVO);
+            list.add(recordQueryVO);
+        });
+        return list;
     }
 
 }

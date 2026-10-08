@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("record")
 @RequiredArgsConstructor
@@ -37,8 +39,8 @@ public class RecordController {
         recordService.edit(editBO);
     }
 
-    @GetMapping("/repeat/page")
-    public PageVO<RecordQueryVO> repeatPage(RecordQueryBO recordQueryBO) {
-        return recordService.repeatPage(recordQueryBO);
+    @GetMapping("/repeat")
+    public List<RecordQueryVO> repeatPage() {
+        return recordService.repeatPage();
     }
 }
