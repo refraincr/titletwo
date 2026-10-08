@@ -16,6 +16,6 @@ public class CommonEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    @TableLogic(delval = "id")
-    private Long deleteFlag;
+    @TableLogic(value = "0", delval = "1")
+    private Integer deleteFlag;
 }
