@@ -37,9 +37,7 @@ public class RepeatRecordServiceImpl extends ServiceImpl<RepeatRecordMapper, Rep
         wrapper.eq(RepeatRecord::getDepartment, unit);
         List<RepeatRecord> list = list(wrapper);
         List<Long> ids = new ArrayList<>();
-        list.forEach(repeatRecord -> {
-            ids.add(repeatRecord.getId());
-        });
+        list.forEach(repeatRecord -> ids.add(repeatRecord.getId()));
         return ids;
     }
 }
