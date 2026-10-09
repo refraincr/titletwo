@@ -33,7 +33,7 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
             );
             List<String> keywordsList = objectMapper.readValue(
                     keywords,
-                    new  TypeReference<>() {}
+                    new TypeReference<>() {}
             );
             keywordsList.forEach(keyword->{
                 if (keywordsMap.containsKey(keyword)){
@@ -42,6 +42,7 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
                     keywordsMap.put(keyword, 1);
                 }
             });
+            personProfile.setId(oldPersonprofile.getId());
             personProfile.setKeywords(objectMapper.writeValueAsString(keywordsMap));
         }
         // 计算基础风险等级
@@ -52,7 +53,11 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
         } else if  (eventCount>0){
             personProfile.setEventRiskLevel("LOW");
         }
-        save(personProfile);
+
+        if (oldPersonprofile == null) {
+            save(personProfile);
+        }
+        updateById(personProfile);
     }
 
 
@@ -64,4 +69,6 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
                 .eq(PersonProfile::getPhone,phone);
         return getOne(wrapper);
     }
+
+
 }

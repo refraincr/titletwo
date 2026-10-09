@@ -14,7 +14,9 @@ public class ParamConvertor {
         PersonProfile personProfile = new PersonProfile();
         personProfile.setName(recordAddBO.getPartyName());
         personProfile.setPhone(recordAddBO.getPartyPhone());
-        personProfile.setIdCard(recordAddBO.getPartyIdCard());
+        if (!recordAddBO.getPartyIdCard().isEmpty()) {
+            personProfile.setIdCard(recordAddBO.getPartyIdCard());
+        }
         personProfile.setLastOccurredAt(recordAddBO.getOccurredAt());
 
         // 统一 keywords 的类型
