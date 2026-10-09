@@ -15,6 +15,7 @@ import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
 import com.uunnm.titletwo.business.record.service.RecordService;
 import com.uunnm.titletwo.business.record.util.RecordUtil;
+import com.uunnm.titletwo.business.record.util.RiskCalculator;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.RequiredArgsConstructor;
@@ -58,45 +59,14 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 recordAddBO.getPartyName(),
                 recordAddBO.getPartyPhone()
         );
-        String riskLevel = getRisk(personProfile, userInfo, keywords);
+        RiskCalculator riskCalculator =  new RiskCalculator();
+        String riskLevel = riskCalculator.getRisk(personProfile, userInfo, keywords);
 
         inputRecord.setEventRiskLevel(riskLevel);
 
         save(inputRecord);
     }
 
-    private static String getRisk(PersonProfile personProfile, UserInfoVO userInfo, String keywords) {
-        String riskLevel = personProfile.getEventRiskLevel();
-
-        // 是否由重点人群录入
-        if (userInfo.getRole().equals("KEY_PERSON")) {
-            if (riskLevel.equals("LOW")) {
-                riskLevel = "NORMAL";
-            }
-        }
-
-        // 关键词，关键词组合
-        for (String s : List.of("扬言", "杀人", "跳楼")) {
-            if (keywords.contains(s)) {
-                if (riskLevel.equals("LOW")) {
-                    riskLevel = "NORMAL";
-                }
-            }
-        }
-
-        if (keywords.contains("婚") && keywords.contains("欠")) {
-            if (riskLevel.equals("LOW")) {
-                riskLevel = "NORMAL";
-            }
-        }
-
-        if (keywords.contains("婚") && keywords.contains("钱")) {
-            if (riskLevel.equals("LOW")) {
-                riskLevel = "NORMAL";
-            }
-        }
-        return riskLevel;
-    }
 
 
     @Override
