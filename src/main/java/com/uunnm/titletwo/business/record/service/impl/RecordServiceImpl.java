@@ -1,9 +1,13 @@
 package com.uunnm.titletwo.business.record.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.uunnm.titletwo.business.auth.service.UserService;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
+import com.uunnm.titletwo.business.person_profile.entity.PersonProfile;
+import com.uunnm.titletwo.business.person_profile.service.PersonProfileService;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
 import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
@@ -25,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> implements RecordService {
     private final UserService userService;
+    private final PersonProfileService personProfileService;
 
     @Override
     public void add(RecordAddBO recordAddBO) {
@@ -40,6 +45,46 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         // 创建人,最后修改人的id
         inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
         inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
+
+        // 人员档案更新
+        personProfileService.processNewEvent(recordAddBO, keywords);
+
+        //基础风险等级
+        PersonProfile personProfile = personProfileService.getByNameAndPhone(
+                recordAddBO.getPartyName(),
+                recordAddBO.getPartyPhone()
+        );
+        String riskLevel = personProfile.getEventRiskLevel();
+
+        // 是否由重点人群录入
+        if (userInfo.getRole().equals("KEY_PERSON")) {
+            if (riskLevel.equals("LOW")) {
+                riskLevel = "NORMAL";
+            }
+        }
+
+        // 关键词，关键词组合
+        for (String s : List.of("扬言", "杀人", "跳楼")) {
+            if (keywords.contains(s)) {
+                if (riskLevel.equals("LOW")) {
+                    riskLevel = "NORMAL";
+                }
+            }
+        }
+
+        if (keywords.contains("婚") && keywords.contains("欠")) {
+            if (riskLevel.equals("LOW")) {
+                riskLevel = "NORMAL";
+            }
+        }
+
+        if (keywords.contains("婚") && keywords.contains("钱")) {
+            if (riskLevel.equals("LOW")) {
+                riskLevel = "NORMAL";
+            }
+        }
+
+        inputRecord.setEventRiskLevel(riskLevel);
 
         save(inputRecord);
     }
@@ -106,6 +151,15 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         InputRecord inputRecord = new InputRecord();
         BeanUtils.copyProperties(editBO,inputRecord);
         updateById(inputRecord);
+    }
+
+    @Override
+    public Integer getCountByNameAndPhone(String name, String phone) {
+        LambdaQueryWrapper<InputRecord> wrapper = Wrappers.lambdaQuery();
+        wrapper
+                .eq(InputRecord::getPartyName, name)
+                .eq(InputRecord::getPartyPhone, phone);
+        return (int) count(wrapper);
     }
 
 

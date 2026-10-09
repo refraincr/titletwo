@@ -38,7 +38,7 @@ public class PersonProfile extends CommonEntity {
     private String keywords;
 
     /**
-     * 风险等级
+     * 事件风险等级
      */
-    private String riskLevel;
+    private String eventRiskLevel;
 }
