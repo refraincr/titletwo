@@ -47,13 +47,25 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
 
         // 人员档案更新
-        personProfileService.processNewEvent(recordAddBO, keywords);
+        personProfileService.processNewEvent(
+                recordAddBO,
+                keywords,
+                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
+        );
 
         //基础风险等级
         PersonProfile personProfile = personProfileService.getByNameAndPhone(
                 recordAddBO.getPartyName(),
                 recordAddBO.getPartyPhone()
         );
+        String riskLevel = getRisk(personProfile, userInfo, keywords);
+
+        inputRecord.setEventRiskLevel(riskLevel);
+
+        save(inputRecord);
+    }
+
+    private static String getRisk(PersonProfile personProfile, UserInfoVO userInfo, String keywords) {
         String riskLevel = personProfile.getEventRiskLevel();
 
         // 是否由重点人群录入
@@ -83,10 +95,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 riskLevel = "NORMAL";
             }
         }
-
-        inputRecord.setEventRiskLevel(riskLevel);
-
-        save(inputRecord);
+        return riskLevel;
     }
 
 

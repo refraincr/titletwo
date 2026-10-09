@@ -8,8 +8,6 @@ import com.uunnm.titletwo.business.person_profile.mapper.PersonProfileMapper;
 import com.uunnm.titletwo.business.person_profile.service.PersonProfileService;
 import com.uunnm.titletwo.business.person_profile.util.ParamConvertor;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
-import com.uunnm.titletwo.business.record.service.RecordService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -19,12 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, PersonProfile> implements PersonProfileService {
-    private final RecordService recordService;
 
     @Override
-    public void processNewEvent(RecordAddBO recordAddBO, String keywords) {
+    public void processNewEvent(RecordAddBO recordAddBO, String keywords,int eventCount) {
         ParamConvertor convertor = new ParamConvertor();
         PersonProfile personProfile = convertor.recordAddBOToPersonProfile(recordAddBO,keywords);
         PersonProfile oldPersonprofile = getByNameAndPhone(personProfile.getName(), personProfile.getPhone());
@@ -49,7 +45,6 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
             personProfile.setKeywords(objectMapper.writeValueAsString(keywordsMap));
         }
         // 计算基础风险等级
-        int eventCount = getCountByNameAndPhone(personProfile.getName(), personProfile.getPhone());
         if (eventCount>5){
             personProfile.setEventRiskLevel("HIGHT");
         } else if  (eventCount>2){
@@ -68,10 +63,5 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
                 .eq(PersonProfile::getName,name)
                 .eq(PersonProfile::getPhone,phone);
         return getOne(wrapper);
-    }
-
-    @Override
-    public Integer getCountByNameAndPhone(String name, String phone) {
-        return recordService.getCountByNameAndPhone(name,phone);
     }
 }
