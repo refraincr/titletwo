@@ -24,4 +24,6 @@ public interface RecordService extends IService<InputRecord> {
     Integer getCountByNameAndPhone(String name, String phone);
 
     List<KeywordStatVO> keywords();
+
+    List<RecordQueryVO> queryByKeywords(String keyword);
 }

@@ -45,4 +45,9 @@ public class RecordController {
     public List<KeywordStatVO> keywords() {
         return recordService.keywords();
     }
+
+    @GetMapping("queryByKeywords")
+    public List<RecordQueryVO> queryByKeywords(@RequestParam String keyword) {
+        return recordService.queryByKeywords(keyword);
+    }
 }

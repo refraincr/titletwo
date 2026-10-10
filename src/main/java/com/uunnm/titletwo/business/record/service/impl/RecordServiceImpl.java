@@ -143,11 +143,30 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     }
 
     /**
-     * 获取 该部门/全部 的关键词
+     * 获取全部的关键词
      * @return {k1:count,k2:count...}
      */
     @Override
     public List<KeywordStatVO> keywords() {
         return baseMapper.selectKeywordStats();
+    }
+
+    /**
+     * 根据关键词获取相关的事件
+     * @param keyword 关键词
+     * @return 相关事件的分页结果
+     */
+    @Override
+    public List<RecordQueryVO> queryByKeywords(String keyword) {
+        LambdaQueryWrapper<InputRecord> wrapper = Wrappers.lambdaQuery();
+        wrapper.like(InputRecord::getKeywordTags, keyword);
+        List<InputRecord> list = list(wrapper);
+        List<RecordQueryVO> voList = new ArrayList<>();
+        list.forEach(inputRecord -> {
+            RecordQueryVO recordQueryVO = new  RecordQueryVO();
+            BeanUtils.copyProperties(inputRecord,recordQueryVO);
+            voList.add(recordQueryVO);
+        });
+        return voList;
     }
 }
