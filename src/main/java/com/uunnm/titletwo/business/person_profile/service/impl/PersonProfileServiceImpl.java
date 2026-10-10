@@ -26,7 +26,7 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
         PersonProfile personProfile = convertor.recordAddBOToPersonProfile(recordAddBO,keywords);
         PersonProfile oldPersonprofile = getByNameAndPhone(personProfile.getName(), personProfile.getPhone());
 
-        // 计算基础风险等级
+        // 计算基础风险等级（这个是人员的风险等级，注意不要和事件风险等级混淆）
         if (eventCount>5){
             personProfile.setEventRiskLevel("HIGHT");
         } else if  (eventCount>2){

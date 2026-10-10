@@ -2,9 +2,11 @@ package com.uunnm.titletwo.business.record.util;
 
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.person_profile.entity.PersonProfile;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class RiskCalculator {
     private static final String low = "LOW";
     private static final String normal = "NORMAL";

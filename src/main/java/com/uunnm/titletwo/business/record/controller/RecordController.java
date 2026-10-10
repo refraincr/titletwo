@@ -26,6 +26,11 @@ public class RecordController {
         recordService.add(recordAddBO);
     }
 
+    @PostMapping("input")
+    public void input(@RequestBody @Validated RecordAddBO recordAddBO) {
+        recordService.input(recordAddBO);
+    }
+
     @DeleteMapping("del")
     public void del(@RequestParam Long id){
         recordService.del(id);

@@ -1,6 +1,7 @@
 package com.uunnm.titletwo.business.record.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
@@ -33,18 +34,20 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     private final UserService userService;
     private final PersonProfileService personProfileService;
 
+    private final RecordUtil recordUtil;
+    private final RiskCalculator riskCalculator;
+
     @Override
     public void add(RecordAddBO recordAddBO) {
         InputRecord inputRecord = new InputRecord();
         BeanUtils.copyProperties(recordAddBO,inputRecord);
         UserInfoVO userInfo = userService.getUserInfo();
 
-        RecordUtil recordUtil = new RecordUtil();
         String keywords = recordUtil.extraKeywords(inputRecord.getProblemDescription());
 
         inputRecord.setKeywordTags(keywords);
 
-        // 创建人,最后修改人的id
+        // 创建人, 最后修改人的id
         inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
         inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
 
@@ -55,12 +58,11 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
         );
 
-        //基础风险等级
+        // 风险等级计算
         PersonProfile personProfile = personProfileService.getByNameAndPhone(
                 recordAddBO.getPartyName(),
                 recordAddBO.getPartyPhone()
         );
-        RiskCalculator riskCalculator =  new RiskCalculator();
         String riskLevel = riskCalculator.getRisk(personProfile, userInfo, keywords);
 
         inputRecord.setEventRiskLevel(riskLevel);
@@ -68,6 +70,37 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         save(inputRecord);
     }
 
+    /**
+     * 先保存不完整的记录再自动更新
+     * @param recordAddBO 添加记录的入参
+     */
+    @Override
+    public void input(RecordAddBO recordAddBO) {
+        UserInfoVO userInfo = userService.getUserInfo();
+        InputRecord inputRecord = recordUtil.extraInputRecord(recordAddBO, userInfo);
+        save(inputRecord);
+
+        // 人员档案更新
+        personProfileService.processNewEvent(
+                recordAddBO,
+                inputRecord.getKeywordTags(),
+                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
+        );
+
+        // 计算事件风险等级 (根据添加了事件后的数据计算风险等级)
+        PersonProfile personProfile = personProfileService.getByNameAndPhone(
+                recordAddBO.getPartyName(),
+                recordAddBO.getPartyPhone()
+        );
+        String riskLevel = riskCalculator.getRisk(personProfile, userInfo, inputRecord.getKeywordTags());
+        inputRecord.setEventRiskLevel(riskLevel);
+
+        // 更新记录
+        LambdaUpdateWrapper<InputRecord> wrapper = Wrappers.lambdaUpdate(InputRecord.class)
+                .eq(InputRecord::getPartyName, inputRecord.getPartyName())
+                .eq(InputRecord::getPartyPhone, inputRecord.getPartyPhone());
+        update(inputRecord, wrapper);
+    }
 
 
     @Override
@@ -81,6 +114,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         // 获取当前上下文的用户
         UserInfoVO userInfo = userService.getUserInfo();
         if (userInfo.getUnit().equals("县综治中心")) {
+
             isCenter = true;
         }
 
