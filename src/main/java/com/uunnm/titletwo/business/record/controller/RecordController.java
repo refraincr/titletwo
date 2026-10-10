@@ -5,11 +5,14 @@ import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.service.RecordService;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
+import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -38,4 +41,8 @@ public class RecordController {
         recordService.edit(editBO);
     }
 
+    @GetMapping("keywords")
+    public List<KeywordStatVO> keywords() {
+        return recordService.keywords();
+    }
 }

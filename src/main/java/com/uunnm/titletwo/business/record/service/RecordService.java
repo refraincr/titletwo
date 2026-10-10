@@ -5,8 +5,11 @@ import com.uunnm.titletwo.business.record.bo.RecordAddBO;
 import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
+import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
+
+import java.util.List;
 
 
 public interface RecordService extends IService<InputRecord> {
@@ -19,4 +22,6 @@ public interface RecordService extends IService<InputRecord> {
     void edit(RecordEditBO editBO);
 
     Integer getCountByNameAndPhone(String name, String phone);
+
+    List<KeywordStatVO> keywords();
 }
