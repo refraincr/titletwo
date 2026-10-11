@@ -23,8 +23,6 @@ public interface RecordService extends IService<InputRecord> {
 
     void edit(RecordEditBO editBO);
 
-    Integer getCountByNameAndPhone(String name, String phone);
-
     List<KeywordStatVO> keywords();
 
     List<RecordQueryVO> queryByKeywords(String keyword);

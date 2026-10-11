@@ -92,14 +92,10 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 recordAddBO.getPartyName(),
                 recordAddBO.getPartyPhone()
         );
-        String riskLevel = riskCalculator.getRisk(personProfile, userInfo, inputRecord.getKeywordTags());
-        inputRecord.setEventRiskLevel(riskLevel);
 
-        // 更新记录
-        LambdaUpdateWrapper<InputRecord> wrapper = Wrappers.lambdaUpdate(InputRecord.class)
-                .eq(InputRecord::getPartyName, inputRecord.getPartyName())
-                .eq(InputRecord::getPartyPhone, inputRecord.getPartyPhone());
-        update(inputRecord, wrapper);
+        // 更新相关事件的风险等级
+        List<InputRecord> inputRecords = queryByNameAndPhone(inputRecord.getPartyName(), inputRecord.getPartyPhone());
+        updatePersonRelatedEvents(inputRecords, personProfile, userInfo);
     }
 
 
@@ -167,13 +163,32 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         updateById(inputRecord);
     }
 
-    @Override
     public Integer getCountByNameAndPhone(String name, String phone) {
         LambdaQueryWrapper<InputRecord> wrapper = Wrappers.lambdaQuery();
         wrapper
                 .eq(InputRecord::getPartyName, name)
                 .eq(InputRecord::getPartyPhone, phone);
         return (int) count(wrapper);
+    }
+
+    public List<InputRecord> queryByNameAndPhone(String name, String phone) {
+        LambdaQueryWrapper<InputRecord> wrapper = Wrappers.lambdaQuery();
+        wrapper
+                .eq(InputRecord::getPartyName, name)
+                .eq(InputRecord::getPartyPhone, phone);
+        return list(wrapper);
+    }
+
+    public void updatePersonRelatedEvents(List<InputRecord> inputRecords,PersonProfile personProfile, UserInfoVO userInfo) {
+        inputRecords.forEach(inputRecord -> {
+            String riskLevel = riskCalculator.getRisk(personProfile, userInfo, inputRecord.getKeywordTags());
+            inputRecord.setEventRiskLevel(riskLevel);
+            LambdaUpdateWrapper<InputRecord> wrapper = Wrappers.lambdaUpdate(InputRecord.class)
+                    .eq(InputRecord::getPartyName, inputRecord.getPartyName())
+                    .eq(InputRecord::getPartyPhone, inputRecord.getPartyPhone())
+                    .eq(InputRecord::getKeywordTags, inputRecord.getKeywordTags());
+            update(inputRecord, wrapper);
+        });
     }
 
     /**
