@@ -6,10 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @MapperScan({
-		"com.uunnm.titletwo.business.auth.mapper",
-		"com.uunnm.titletwo.business.record.mapper",
 		"com.uunnm.titletwo.common.log.mapper",
-		"com.uunnm.titletwo.business.person_profile.mapper"
+		"com.uunnm.titletwo.business.*.mapper"
 })
 public class TitletwoApplication {
 

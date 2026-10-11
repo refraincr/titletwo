@@ -37,39 +37,6 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     private final RecordUtil recordUtil;
     private final RiskCalculator riskCalculator;
 
-    @Override
-    public void add(RecordAddBO recordAddBO) {
-        InputRecord inputRecord = new InputRecord();
-        BeanUtils.copyProperties(recordAddBO,inputRecord);
-        UserInfoVO userInfo = userService.getUserInfo();
-
-        String keywords = recordUtil.extraKeywords(inputRecord.getProblemDescription());
-
-        inputRecord.setKeywordTags(keywords);
-
-        // 创建人, 最后修改人的id
-        inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
-        inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
-
-        // 人员档案更新
-        personProfileService.processNewEvent(
-                recordAddBO,
-                keywords,
-                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
-        );
-
-        // 风险等级计算
-        PersonProfile personProfile = personProfileService.getByNameAndPhone(
-                recordAddBO.getPartyName(),
-                recordAddBO.getPartyPhone()
-        );
-        String riskLevel = riskCalculator.getRisk(personProfile, userInfo, keywords);
-
-        inputRecord.setEventRiskLevel(riskLevel);
-
-        save(inputRecord);
-    }
-
     /**
      * 先保存不完整的记录再自动更新
      * @param recordAddBO 添加记录的入参
@@ -95,7 +62,12 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
 
         // 更新相关事件的风险等级
         List<InputRecord> inputRecords = queryByNameAndPhone(inputRecord.getPartyName(), inputRecord.getPartyPhone());
-        updatePersonRelatedEvents(inputRecords, personProfile, userInfo);
+        updatePersonRelatedEvents(
+                inputRecords,
+                personProfile,
+                userInfo,
+                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
+        );
     }
 
 
@@ -179,9 +151,15 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         return list(wrapper);
     }
 
-    public void updatePersonRelatedEvents(List<InputRecord> inputRecords,PersonProfile personProfile, UserInfoVO userInfo) {
+    public void updatePersonRelatedEvents(List<InputRecord> inputRecords,PersonProfile personProfile, UserInfoVO userInfo, int eventCount) {
         inputRecords.forEach(inputRecord -> {
-            String riskLevel = riskCalculator.getRisk(personProfile, userInfo, inputRecord.getKeywordTags());
+            String riskLevel = riskCalculator.getRisk(
+                    personProfile,
+                    userInfo,
+                    inputRecord.getKeywordTags(),
+                    inputRecord.getId(),
+                    eventCount
+            );
             inputRecord.setEventRiskLevel(riskLevel);
             LambdaUpdateWrapper<InputRecord> wrapper = Wrappers.lambdaUpdate(InputRecord.class)
                     .eq(InputRecord::getPartyName, inputRecord.getPartyName())

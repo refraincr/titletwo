@@ -21,11 +21,6 @@ import java.util.List;
 public class RecordController {
     private final RecordService recordService;
 
-    @PostMapping("add")
-    public void add(@RequestBody @Validated RecordAddBO recordAddBO){
-        recordService.add(recordAddBO);
-    }
-
     @PostMapping("input")
     public void input(@RequestBody @Validated RecordAddBO recordAddBO) {
         recordService.input(recordAddBO);
