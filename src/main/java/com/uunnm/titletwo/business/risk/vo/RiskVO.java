@@ -13,6 +13,4 @@ public class RiskVO {
     /** 事件当事人的关联事件次数 */
     private Integer partyEventCount;
 
-    /** 判断依据所关联的事件 ID */
-    private Long recordId;
 }

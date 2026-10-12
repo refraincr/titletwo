@@ -66,9 +66,9 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
             // 更新事件需要 id
             personProfile.setId(oldPersonprofile.getId());
             updateById(personProfile);
+        } else {
+            save(personProfile);
         }
-
-        save(personProfile);
     }
 
 

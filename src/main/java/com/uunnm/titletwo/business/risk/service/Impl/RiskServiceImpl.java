@@ -1,5 +1,7 @@
 package com.uunnm.titletwo.business.risk.service.Impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.uunnm.titletwo.business.risk.bo.RiskAddBO;
 import com.uunnm.titletwo.business.risk.entity.RiskCalculationBasis;
@@ -20,7 +22,9 @@ public class RiskServiceImpl extends ServiceImpl<RiskMapper, RiskCalculationBasi
 
     @Override
     public RiskVO read(Long eventId) {
-        RiskCalculationBasis calculationBasis = getById(eventId);
+        LambdaQueryWrapper<RiskCalculationBasis> eq = Wrappers.lambdaQuery(RiskCalculationBasis.class)
+                .eq(RiskCalculationBasis::getRecordId, eventId);
+        RiskCalculationBasis calculationBasis = getOne(eq);
         RiskVO riskVO = new RiskVO();
         BeanUtils.copyProperties(calculationBasis, riskVO);
         return riskVO;
