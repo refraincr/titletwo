@@ -8,12 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -135,7 +137,11 @@ public class FileUtil {
 
     public void processCsv(MultipartFile file, List<InputRecord> inputRecords)  {
         try (
-                Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+                // 自动删除 utf-8 bom 直接顺序标记
+                InputStream inputStream = BOMInputStream.builder()
+                        .setInputStream(file.getInputStream())
+                        .get();
+                Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
                 CSVParser parser = CSVFormat.DEFAULT.builder()
                         .setHeader()
                         .setSkipHeaderRecord(true)
