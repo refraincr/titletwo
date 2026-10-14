@@ -1,0 +1,38 @@
+package com.uunnm.titletwo.business.person_profile.vo;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+public class ArchiveVO {
+    /**
+     * 人员姓名
+     */
+    private String name;
+
+    /**
+     * 手机号码
+     */
+    private String phone;
+
+    /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 最近关联事件发生时间
+     */
+    private LocalDateTime lastOccurredAt;
+
+    /**
+     * 关键词
+     */
+    private String keywords;
+
+    /**
+     * 基础（人员）风险等级
+     */
+    private String riskLevel;
+}
