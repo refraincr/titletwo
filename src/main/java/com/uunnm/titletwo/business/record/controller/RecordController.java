@@ -11,6 +11,7 @@ import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,6 +25,11 @@ public class RecordController {
     @PostMapping("input")
     public void input(@RequestBody @Validated RecordAddBO recordAddBO) {
         recordService.input(recordAddBO);
+    }
+
+    @PostMapping("file_input")
+    public void fileInput(@RequestParam("file") MultipartFile file) {
+        recordService.fileInput(file);
     }
 
     @DeleteMapping("del")

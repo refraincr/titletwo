@@ -1,9 +1,17 @@
 package com.uunnm.titletwo.business.person_profile.service;
 
+import com.uunnm.titletwo.business.person_profile.bo.ArchivePageBO;
 import com.uunnm.titletwo.business.person_profile.entity.PersonProfile;
+import com.uunnm.titletwo.business.person_profile.vo.ArchiveVO;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
+import com.uunnm.titletwo.common.entity.PageVO;
+
+import java.util.List;
 
 public interface PersonProfileService {
-    void processNewEvent(RecordAddBO recordAddBO,String keywords,int eventCount);
+    PersonProfile processNewEvent(RecordAddBO recordAddBO,String keywords,int eventCount);
     PersonProfile getByNameAndPhone(String name, String phone);
+    PageVO<ArchiveVO> page(ArchivePageBO archivePageBO);
+
+    List<PersonProfile> processNewEvents();
 }

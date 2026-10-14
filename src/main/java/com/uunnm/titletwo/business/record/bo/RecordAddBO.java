@@ -10,17 +10,17 @@ import java.time.LocalDateTime;
  */
 @Data
 public class RecordAddBO {
-
-
     /**
      * 当事人姓名
      */
+    @NotBlank(message = "当事人姓名不能为空")
     private String partyName;
 
 
     /**
      * 当事人联系电话
      */
+    @NotBlank(message = "当事人联系电话不能为空")
     private String partyPhone;
 
 
@@ -78,15 +78,6 @@ public class RecordAddBO {
      */
     @NotBlank(message = "纠纷类型不能为空")
     private String disputeType;
-
-
-    /**
-     * 风险等级
-     * <p>
-     * 示例：
-     * LOW、NORMAL、HIGH
-     */
-    private String eventRiskLevel;
 
 
     /**

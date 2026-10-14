@@ -8,6 +8,7 @@ import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,4 +25,6 @@ public interface RecordService extends IService<InputRecord> {
     List<KeywordStatVO> keywords();
 
     List<RecordQueryVO> queryByKeywords(String keyword);
+
+    void fileInput(MultipartFile file);
 }

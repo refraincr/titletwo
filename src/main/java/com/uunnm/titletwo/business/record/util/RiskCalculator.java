@@ -33,7 +33,7 @@ public class RiskCalculator {
     }
 
     public String getRisk(PersonProfile personProfile, UserInfoVO userInfo, String keywords, Long recordId, int eventCount) {
-        String riskLevel = personProfile.getEventRiskLevel();
+        String riskLevel = personProfile.getRiskLevel();
 
         if (riskLevel == null){
             riskLevel = "LOW";

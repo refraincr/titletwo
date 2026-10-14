@@ -15,6 +15,7 @@ import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
 import com.uunnm.titletwo.business.record.service.RecordService;
+import com.uunnm.titletwo.business.record.util.FileUtil;
 import com.uunnm.titletwo.business.record.util.RecordUtil;
 import com.uunnm.titletwo.business.record.util.RiskCalculator;
 import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
@@ -24,9 +25,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
 
     private final RecordUtil recordUtil;
     private final RiskCalculator riskCalculator;
+    private final FileUtil fileUtil;
 
     /**
      * 先保存不完整的记录再自动更新
@@ -48,28 +52,15 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         save(inputRecord);
 
         // 人员档案更新
-        personProfileService.processNewEvent(
+        PersonProfile personProfile = personProfileService.processNewEvent(
                 recordAddBO,
                 inputRecord.getKeywordTags(),
                 getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
         );
 
-        // 计算事件风险等级 (根据添加了事件后的数据计算风险等级)
-        PersonProfile personProfile = personProfileService.getByNameAndPhone(
-                recordAddBO.getPartyName(),
-                recordAddBO.getPartyPhone()
-        );
-
         // 更新相关事件的风险等级
-        List<InputRecord> inputRecords = queryByNameAndPhone(inputRecord.getPartyName(), inputRecord.getPartyPhone());
-        updatePersonRelatedEvents(
-                inputRecords,
-                personProfile,
-                userInfo,
-                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
-        );
+        updatePersonRelatedEvents(personProfile);
     }
-
 
     @Override
     public void del(Long id) {
@@ -108,6 +99,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
                 .eq(StringUtils.hasText(recordQueryBO.getDisputeType()),
                         InputRecord::getDisputeType, recordQueryBO.getDisputeType()
                 )
+                .like(StringUtils.hasText(recordQueryBO.getKeyword()),
+                        InputRecord::getKeywordTags, recordQueryBO.getKeyword())
                 .eq(!isCenter, InputRecord::getCreatedBy, userInfo.getId())
                 .page(pageRequest);
 
@@ -132,6 +125,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     public void edit(RecordEditBO editBO) {
         InputRecord inputRecord = new InputRecord();
         BeanUtils.copyProperties(editBO,inputRecord);
+        UserInfoVO userInfo = userService.getUserInfo();
+        inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
         updateById(inputRecord);
     }
 
@@ -151,14 +146,20 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         return list(wrapper);
     }
 
-    public void updatePersonRelatedEvents(List<InputRecord> inputRecords,PersonProfile personProfile, UserInfoVO userInfo, int eventCount) {
+    /**
+     * 自动计算人员相关事件的风险等级
+     * @param personProfile 人员档案
+     */
+    private void updatePersonRelatedEvents(PersonProfile personProfile) {
+        UserInfoVO userInfo = userService.getUserInfo();
+        List<InputRecord> inputRecords = queryByNameAndPhone(personProfile.getName(), personProfile.getPhone());
         inputRecords.forEach(inputRecord -> {
             String riskLevel = riskCalculator.getRisk(
                     personProfile,
                     userInfo,
                     inputRecord.getKeywordTags(),
                     inputRecord.getId(),
-                    eventCount
+                    inputRecords.size()
             );
             inputRecord.setEventRiskLevel(riskLevel);
             LambdaUpdateWrapper<InputRecord> wrapper = Wrappers.lambdaUpdate(InputRecord.class)
@@ -195,5 +196,35 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
             voList.add(recordQueryVO);
         });
         return voList;
+    }
+
+    /**
+     * 处理 csv, excel 文件数据导入
+     * @param file 传来的文件
+     */
+    @Override
+    public void fileInput(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("上传文件不能为空");
+        }
+
+        String fileName = file.getOriginalFilename();
+
+        if (fileName == null || fileName.isEmpty()) {
+            throw new IllegalArgumentException("上传文件不能为空");
+        }
+
+        String suffix = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+
+        List<InputRecord> inputRecords = new ArrayList<>();
+        switch (suffix) {
+            case ".xls", ".xlsx" -> fileUtil.processExcel(file, inputRecords);
+            case ".csv" -> fileUtil.processCsv(file, inputRecords);
+        }
+
+        saveBatch(inputRecords);
+
+        List<PersonProfile> personProfiles = personProfileService.processNewEvents();
+        personProfiles.forEach(this::updatePersonRelatedEvents);
     }
 }
