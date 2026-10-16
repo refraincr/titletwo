@@ -3,24 +3,24 @@ package com.uunnm.titletwo.business.record.util;
 import com.uunnm.titletwo.business.auth.service.UserService;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
+import jakarta.servlet.ServletOutputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,5 +197,58 @@ public class FileUtil {
         });
 
         return inputRecord;
+    }
+
+    public void writeCsv(ServletOutputStream outputStream) throws IOException {
+        // 方便 excel 识别中文
+        outputStream.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+
+        StringBuilder fields = new StringBuilder();
+        REQUIRED_FIELDS_SETTERS.forEach((field, value) -> {
+            if (fields.isEmpty()) {
+                fields.append(field);
+            }
+            fields.append(",");
+            fields.append(field);
+        });
+        ELSE_FIELD_SETTERS.forEach((field, value) -> fields.append(",").append(field));
+
+
+        try (
+                Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)
+                ) {
+            writer.write(String.valueOf(fields));
+            writer.write("\r\n");
+            writer.flush();
+        }
+    }
+
+    public void writeExcel(ServletOutputStream outputStream, String type) throws IOException {
+        try (Workbook workbook = "xlsx".equals(type)
+            ? new XSSFWorkbook()
+            : new HSSFWorkbook()
+        ) {
+            Sheet sheet = workbook.createSheet("事件导入模版");
+            Row headerRow = sheet.createRow(0);
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            List<String> fields = new ArrayList<>();
+            REQUIRED_FIELDS_SETTERS.forEach((field, value) -> fields.add(field));
+            ELSE_FIELD_SETTERS.forEach((field, value) -> fields.add(field));
+
+            for (int i = 0; i < fields.size(); i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(fields.get(i));
+                cell.setCellStyle(headerStyle);
+                sheet.setColumnWidth(i, 20 * 256);
+            }
+
+            workbook.write(outputStream);
+            outputStream.flush();
+        }
     }
 }

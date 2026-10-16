@@ -9,10 +9,7 @@ import com.uunnm.titletwo.business.auth.service.UserService;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.person_profile.entity.PersonProfile;
 import com.uunnm.titletwo.business.person_profile.service.PersonProfileService;
-import com.uunnm.titletwo.business.record.bo.PersonQueryBO;
-import com.uunnm.titletwo.business.record.bo.RecordAddBO;
-import com.uunnm.titletwo.business.record.bo.RecordEditBO;
-import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
+import com.uunnm.titletwo.business.record.bo.*;
 import com.uunnm.titletwo.business.record.entity.InputRecord;
 import com.uunnm.titletwo.business.record.mapper.RecordMapper;
 import com.uunnm.titletwo.business.record.service.RecordService;
@@ -23,14 +20,22 @@ import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
 import com.uunnm.titletwo.business.record.vo.PersonEventCountVO;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
+import com.uunnm.titletwo.common.exception.BusinessException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 
 @Service
@@ -49,6 +54,9 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
      */
     @Override
     public void input(RecordAddBO recordAddBO) {
+        if (isRepeat(recordAddBO)) {
+            throw new BusinessException("该记录已存在，请勿重复添加");
+        }
         UserInfoVO userInfo = userService.getUserInfo();
         InputRecord inputRecord = recordUtil.extraInputRecord(recordAddBO, userInfo);
         save(inputRecord);
@@ -170,6 +178,29 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
     }
 
     /**
+     *
+     * @param inputRecord 查询参数
+     * @return 是否存在
+     */
+    private boolean isRepeat(InputRecord inputRecord) {
+        LambdaQueryWrapper<InputRecord> eq = Wrappers.lambdaQuery(InputRecord.class)
+                .eq(InputRecord::getPartyName, inputRecord.getPartyName())
+                .eq(InputRecord::getPartyPhone, inputRecord.getPartyPhone())
+                .eq(InputRecord::getOccurredAt, inputRecord.getOccurredAt())
+                .eq(InputRecord::getDisputeType, inputRecord.getDisputeType());
+        return exists(eq);
+    }
+
+    private boolean isRepeat(RecordAddBO recordAddBO) {
+        LambdaQueryWrapper<InputRecord> eq = Wrappers.lambdaQuery(InputRecord.class)
+                .eq(InputRecord::getPartyName, recordAddBO.getPartyName())
+                .eq(InputRecord::getPartyPhone, recordAddBO.getPartyPhone())
+                .eq(InputRecord::getOccurredAt, recordAddBO.getOccurredAt())
+                .eq(InputRecord::getDisputeType, recordAddBO.getDisputeType());
+        return exists(eq);
+    }
+
+    /**
      * 获取全部的关键词
      * @return {k1:count,k2:count...}
      */
@@ -202,6 +233,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
      * @param file 传来的文件
      */
     @Override
+    @Transactional(rollbackFor = Exception.class) // 事务注解
     public void fileInput(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("上传文件不能为空");
@@ -219,6 +251,13 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         switch (suffix) {
             case ".xls", ".xlsx" -> fileUtil.processExcel(file, inputRecords);
             case ".csv" -> fileUtil.processCsv(file, inputRecords);
+        }
+
+        // 查重
+        for (int i = 0; i < inputRecords.size(); i++) {
+            if (isRepeat(inputRecords.get(i))) {
+                throw new BusinessException("文件包含已存在数据行请重新上传");
+            }
         }
 
         // 提取并设置问题描述的关键词
@@ -240,5 +279,36 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
 
         List<PersonProfile> personProfiles = personProfileService.processNewEvents(inputRecords, personEventCountVOS);
         personProfiles.forEach(this::updatePersonRelatedEvents);
+    }
+
+    @Override
+    public void importTemplate(String type, HttpServletResponse response) throws IOException {
+        type = type.toLowerCase(Locale.ROOT);
+
+        if (!Set.of("xlsx", "xls", "csv").contains(type)) {
+            throw new IllegalArgumentException("不支持的文件格式");
+        }
+
+        String filename = URLEncoder.encode("事件导入模板."+type, StandardCharsets.UTF_8);
+
+        response.setContentType(
+                switch (type) {
+                    case "csv" -> "text/csv;charset=UTF-8";
+                    case "xls" -> "application/vnd.ms-excel";
+                    case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                    default -> throw new IllegalArgumentException("不支持的文件格式");
+                }
+        );
+
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename*=UTF-8''" + filename
+        );
+
+        if ("csv".equals(type)) {
+            fileUtil.writeCsv(response.getOutputStream());
+        } else {
+            fileUtil.writeExcel(response.getOutputStream(), type);
+        }
     }
 }
