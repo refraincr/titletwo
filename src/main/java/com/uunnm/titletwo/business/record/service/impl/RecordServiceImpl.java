@@ -9,6 +9,7 @@ import com.uunnm.titletwo.business.auth.service.UserService;
 import com.uunnm.titletwo.business.auth.vo.UserInfoVO;
 import com.uunnm.titletwo.business.person_profile.entity.PersonProfile;
 import com.uunnm.titletwo.business.person_profile.service.PersonProfileService;
+import com.uunnm.titletwo.business.record.bo.PersonQueryBO;
 import com.uunnm.titletwo.business.record.bo.RecordAddBO;
 import com.uunnm.titletwo.business.record.bo.RecordEditBO;
 import com.uunnm.titletwo.business.record.bo.RecordQueryBO;
@@ -19,6 +20,7 @@ import com.uunnm.titletwo.business.record.util.FileUtil;
 import com.uunnm.titletwo.business.record.util.RecordUtil;
 import com.uunnm.titletwo.business.record.util.RiskCalculator;
 import com.uunnm.titletwo.business.record.vo.KeywordStatVO;
+import com.uunnm.titletwo.business.record.vo.PersonEventCountVO;
 import com.uunnm.titletwo.business.record.vo.RecordQueryVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 import lombok.RequiredArgsConstructor;
@@ -52,11 +54,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
         save(inputRecord);
 
         // 人员档案更新
-        PersonProfile personProfile = personProfileService.processNewEvent(
-                recordAddBO,
-                inputRecord.getKeywordTags(),
-                getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone())
-        );
+        int eventCount = getCountByNameAndPhone(recordAddBO.getPartyName(),recordAddBO.getPartyPhone());
+        PersonProfile personProfile = personProfileService.processNewEvent(inputRecord,eventCount);
 
         // 更新相关事件的风险等级
         updatePersonRelatedEvents(personProfile);
@@ -222,9 +221,24 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper,InputRecord> imp
             case ".csv" -> fileUtil.processCsv(file, inputRecords);
         }
 
+        // 提取并设置问题描述的关键词
+        inputRecords.forEach(inputRecord -> {
+            String keywords = recordUtil.extraKeywords(inputRecord.getProblemDescription());
+            inputRecord.setKeywordTags(keywords);
+        });
+
         saveBatch(inputRecords);
 
-        List<PersonProfile> personProfiles = personProfileService.processNewEvents();
+        // 查询有关人员的关联事件次数
+        List<PersonQueryBO> personQueryBOS = inputRecords.stream()
+                .map(inputRecord ->
+                        new PersonQueryBO(inputRecord.getPartyName(), inputRecord.getPartyPhone()))
+                .distinct()
+                .toList();
+
+        List<PersonEventCountVO> personEventCountVOS = baseMapper.selectPersonEventCount(personQueryBOS);
+
+        List<PersonProfile> personProfiles = personProfileService.processNewEvents(inputRecords, personEventCountVOS);
         personProfiles.forEach(this::updatePersonRelatedEvents);
     }
 }

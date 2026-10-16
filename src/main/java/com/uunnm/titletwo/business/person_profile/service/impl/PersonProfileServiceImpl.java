@@ -10,7 +10,8 @@ import com.uunnm.titletwo.business.person_profile.mapper.PersonProfileMapper;
 import com.uunnm.titletwo.business.person_profile.service.PersonProfileService;
 import com.uunnm.titletwo.business.person_profile.util.ParamConvertor;
 import com.uunnm.titletwo.business.person_profile.vo.ArchiveVO;
-import com.uunnm.titletwo.business.record.bo.RecordAddBO;
+import com.uunnm.titletwo.business.record.entity.InputRecord;
+import com.uunnm.titletwo.business.record.vo.PersonEventCountVO;
 import com.uunnm.titletwo.common.entity.PageVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.core.type.TypeReference;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,9 +29,9 @@ import java.util.Map;
 public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, PersonProfile> implements PersonProfileService {
 
     @Override
-    public PersonProfile processNewEvent(RecordAddBO recordAddBO, String keywords,int eventCount) {
+    public PersonProfile processNewEvent(InputRecord inputRecord, int eventCount) {
         ParamConvertor convertor = new ParamConvertor();
-        PersonProfile personProfile = convertor.recordAddBOToPersonProfile(recordAddBO,keywords);
+        PersonProfile personProfile = convertor.recordAddBOToPersonProfile(inputRecord);
         PersonProfile oldPersonprofile = getByNameAndPhone(personProfile.getName(), personProfile.getPhone());
 
         // 计算基础风险等级（这个是人员的风险等级，注意不要和事件风险等级混淆）
@@ -50,7 +52,7 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
                     new TypeReference<>() {}
             );
             List<String> keywordsList = objectMapper.readValue(
-                    keywords,
+                    inputRecord.getKeywordTags(),
                     new TypeReference<>() {}
             );
             keywordsList.forEach(keyword->{
@@ -76,7 +78,7 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
             save(personProfile);
         }
 
-        return getByNameAndPhone(recordAddBO.getPartyName(), recordAddBO.getPartyPhone());
+        return getByNameAndPhone(inputRecord.getPartyName(), inputRecord.getPartyPhone());
     }
 
 
@@ -125,7 +127,14 @@ public class PersonProfileServiceImpl extends ServiceImpl<PersonProfileMapper, P
     }
 
     @Override
-    public List<PersonProfile> processNewEvents() {
-        return List.of();
+    public List<PersonProfile> processNewEvents(List<InputRecord> inputRecords, List<PersonEventCountVO> personEventCountVOS) {
+        Map<String, Integer> personEventCountMap = new HashMap<>();
+        personEventCountVOS.forEach(p ->
+                personEventCountMap.put(p.getPartyName()+p.getPartyPhone(), p.getEventCount()));
+
+        return inputRecords.stream()
+                .map(record->
+                        processNewEvent(record, personEventCountMap.get(record.getPartyName()+record.getPartyPhone())))
+                .toList();
     }
 }

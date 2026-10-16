@@ -153,6 +153,9 @@ public class FileUtil {
             parser.forEach(record -> {
                 if (validCsvData(record)) {
                     InputRecord inputRecord = copyPropertiesCsvData(record);
+                    UserInfoVO userInfo = userService.getUserInfo();
+                    inputRecord.setCreatedBy(String.valueOf(userInfo.getId()));
+                    inputRecord.setModifiedBy(String.valueOf(userInfo.getId()));
                     inputRecords.add(inputRecord);
                 }
             });
@@ -178,7 +181,7 @@ public class FileUtil {
     private InputRecord copyPropertiesCsvData(CSVRecord record) {
         InputRecord inputRecord = new InputRecord();
         // 必填字段
-        ELSE_FIELD_SETTERS.forEach((field, setter) -> {
+        REQUIRED_FIELDS_SETTERS.forEach((field, setter) -> {
             String value = record.get(field);
             setter.accept(inputRecord, value);
         });
